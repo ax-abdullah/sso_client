@@ -21,13 +21,13 @@ class SSOContoller extends Controller
             'state'                   => $state,
             'prompt'                  => true
         ]);
-        return redirect('http://127.0.0.1:8000/oauth/authorize?'. $query);
+        return redirect(env('SSO_HOST').'oauth/authorize?'. $query);
     }
 
     public function getCallback(Request $request){
         $state = $request->session()->pull('state');
         throw_unless(strlen($state) > 0 && $state == $request->state, InvalidArgumentException::class);
-        $response = Http::asForm()->post('http://127.0.0.1:8000/oauth/token',
+        $response = Http::asForm()->post(env('SSO_HOST').'oauth/token',
         [
             'grant_type'            => 'authorization_code',
             'client_id'             => env('CLIENT_ID'),
@@ -49,16 +49,11 @@ class SSOContoller extends Controller
             'Authorization' => 'Bearer '. $access_token,
             'Accept' => 'application/json',
             // 'Content-Type' => 'application/json'
-            ])->get('http://127.0.0.1:8000/api/user');
+            ])->get(env('SSO_HOST').'api/user');
 
         $userArray              = $response->json();
         try{
             $email              = $userArray['email'];
-            // $exists             = User::where('email', $email)->first();
-            // if($exists) {
-            //     Auth::loginUsingId($exists->id);
-            //     return redirect()->route('home');
-            // }
         } catch(\Throwable $th){
             return redirect('login')->withErrors('Failed To get login information! Try again');
         }
@@ -81,10 +76,9 @@ class SSOContoller extends Controller
             'Authorization' => 'Bearer '. $access_token,
             'Accept' => 'application/json',
             // 'Content-Type' => 'application/json'
-            ])->get('http://127.0.0.1:8000/oauth/clients');
+            ])->get(env('SSO_HOST').'oauth/clients');
 
         $clientsArray              = $response->json();
-        dd($clientsArray);
         return $clientsArray;
     }
 }
